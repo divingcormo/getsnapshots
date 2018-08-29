@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# this script does not check for running jobs, but considers existing results
+for i in pre-opt-*.log ; do 
+  sge=`echo $i | sed 's/\.log/.sge/'`
+  mndo=`echo $i | sed 's/\.log/-mndo.out/'`
+  in=`echo $i | sed 's/\.log/-mndo.in/'`
+  cf=`echo $i | sed 's/.*-opt-//;s/\.log//'`
+
+  if [ `grep -c 'Converged' $i` -eq 1 ]; then
+      echo "$i : converged."
+  else
+    if [ `check-mndo-degenerate $mndo | wc -l` -eq 0 ]; then
+      echo "$i not converged but not due to orbital crossing" ; continue
+    fi
+
+    if ! [ -f $sge ]; then 
+      echo "no $sge - creating generic one"
+      sed "s/XXX/$cf/g" post-opt-XXX.sge > $sge || exit
+    fi
+
+    if [ `grep -c 'change ici2' $sge` -eq 0 ]; then
+      sed 's/# run chemsh/# change ici2\nsed "s\/ici2=[^ ]*\/ici2=8\/" $name.chm > z ; mv z $name.chm\n\n# run chemsh/' $sge > z ; mv z $sge
+      echo "changed ici2 in $sge"
+    elif [ `grep -c 'ici2=8' $mndo` -eq 1 ]; then
+      echo "$i did not converge with ici2=8, resubmit $sge"
+    else
+      ici2=`grep 'ici2=' $in | sed 's/.*ici2=//' | awk '{print $1}'`
+      echo "$i did not converge with ici2=$ici2 , trying ici2=8 ..."
+      sed "s/ici2=$ici2/ici2=8/" $sge > z ; mv z $sge
+    fi
+
+    if [ `grep -c 'restart from previous opt' $sge` -eq 0 ]; then
+      sed -n '1,/# run chemsh/p' $sge | sed '/# run chemsh/d' > z ; cat << "END" >> z
+# restart from previous opt.c
+opt=$files/pre-opt-`echo $frame | sed 's/-frame-/-/'`-opt.c
+input=pre-opt-`echo $frame | sed 's/-frame-/-/'`
+cp $opt $input.c
+sed "s/set input charmm/set input $input/" $name.chm > z ; mv z $name.chm
+END
+      echo "" >> z ; echo '# run chemsh' >> z
+      sed '1,/# run chemsh/d' $sge >> z
+      if ! [ -f $sge.bak ]; then cp $sge $sge.bak ; fi
+      mv z $sge
+    fi
+
+    echo "changed ici2 in $sge - resubmitting..."
+    sbatch $sge
+  fi
+done

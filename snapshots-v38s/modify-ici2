@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# this script does not check for running jobs, but considers existing results
+for i in cro-opt-*.log ; do 
+  sge=`echo $i | sed 's/\.log/.sge/'`
+  mndo=`echo $i | sed 's/\.log/-mndo.out/'`
+  in=`echo $i | sed 's/\.log/-mndo.in/'`
+  cf=`echo $i | sed 's/.*-opt-//;s/\.log//'`
+
+  if [ `grep -c 'Converged' $i` -eq 1 ]; then
+    # check if ici2 is at least 42
+    ici2=`grep 'ici2=' $in | sed 's/.*ici2=//' | awk '{print $1}'`
+    if [ "$ici2" -lt 42 ]; then
+      echo "$i converged, but with ici2=$ici2"
+      if ! [ -f $sge ]; then
+        echo "no $sge - creating generic one"
+        sed "s/XXX/$cf/g" post-opt-XXX.sge > $sge
+      fi
+      if [ `grep -c 'change ici2' $sge` -eq 0 ]; then
+        sed 's/# run chemsh/# change ici2\nsed "s\/ici2=[^ ]*\/ici2=44\/" $name.chm > z ; mv z $name.chm\n\n# run chemsh/' $sge > z ; mv z $sge
+        echo "changed ici2 in $sge - resubmitting..."
+      fi
+
+      if [ `grep -c 'restart from previous opt' $sge` -eq 0 ]; then
+        sed -n '1,/# run chemsh/p' $sge | sed '/# run chemsh/d' > z ; cat << "END" >> z
+# restart from previous opt.c
+opt=$files/cro-opt-`echo $frame | sed 's/-frame-/-/'`-opt.c
+input=cro-opt-`echo $frame | sed 's/-frame-/-/'`
+cp $opt $input.c
+sed "s/set input charmm/set input $input/" $name.chm > z ; mv z $name.chm
+END
+        echo "" >> z ; echo '# run chemsh' >> z
+        sed '1,/# run chemsh/d' $sge >> z
+        if ! [ -f $sge.bak ]; then cp $sge $sge.bak ; fi
+        mv z $sge      
+      fi
+      sbatch $sge
+    else
+      echo "$i : converged."
+    fi
+  else
+    if ! [ -f $sge ]; then 
+      echo "no $sge - creating generic one"
+      sed "s/XXX/$cf/g" post-opt-XXX.sge > $sge
+    fi
+
+    check-mndo-degenerate $mndo > check-mndo-degenerate.log
+    if [ `grep -c ici2 check-mndo-degenerate.log` -eq 1 ] && [ `grep -c 'change ici2' $sge` -eq 0 ]; then
+      sed 's/# run chemsh/# change ici2\nsed "s\/ici2=[^ ]*\/ici2=44\/" $name.chm > z ; mv z $name.chm\n\n# run chemsh/' $sge > z ; mv z $sge
+      echo "ici2 must be increased - changed ici2 to 44 in $sge"
+    elif [ `grep -c ici2 check-mndo-degenerate.log` -eq 1 ] && [ `grep -c 'ici2=44' $in` -eq 1 ]; then
+      cat check-mndo-degenerate.log
+      echo "$i did not converge with ici2=44, change $sge yourself" ; continue
+    elif [ `grep -c ici1 check-mndo-degenerate.log` -eq 1 ] && [ `grep -c 'change ici1' $sge` -eq 0 ]; then
+      sed 's/# run chemsh/# change ici1\nsed "s\/ici1=[^ ]*\/ici1=43\/" $name.chm > z ; mv z $name.chm\n\n# run chemsh/' $sge > z ; mv z $sge
+      echo "ici1 must be increased - changed ici1 to 43 in $sge"
+    elif [ `grep -c ici1 check-mndo-degenerate.log` -eq 1 ] && [ `grep -c 'ici1=43' $in` -eq 1 ]; then
+      cat check-mndo-degenerate.log
+      echo "change ici1 in $sge yourself" ; continue
+    else
+      ici1=`grep 'ici1=' $in | sed 's/.*ici1=//' | awk '{print $1}'`
+      ici2=`grep 'ici2=' $in | sed 's/.*ici2=//' | awk '{print $1}'`
+      echo "$i did not converge with ici1=$ici1 ici2=$ici2"
+    fi
+
+    if [ `grep -c 'restart from previous opt' $sge` -eq 0 ]; then
+      sed -n '1,/# run chemsh/p' $sge | sed '/# run chemsh/d' > z ; cat << "END" >> z
+# restart from previous opt.c
+opt=$files/cro-opt-`echo $frame | sed 's/-frame-/-/'`-opt.c
+input=cro-opt-`echo $frame | sed 's/-frame-/-/'`
+cp $opt $input.c
+sed "s/set input charmm/set input $input/" $name.chm > z ; mv z $name.chm
+END
+      echo "" >> z ; echo '# run chemsh' >> z
+      sed '1,/# run chemsh/d' $sge >> z
+      if ! [ -f $sge.bak ]; then cp $sge $sge.bak ; fi
+      mv z $sge
+    fi
+
+    echo "changed ici2 in $sge - resubmitting..."
+    sbatch $sge
+  fi
+done
