@@ -8,15 +8,17 @@ import argparse
 import asyncio
 import math
 from collections import defaultdict, namedtuple
+import shutil
+import subprocess
 
 import numpy as np
 import tqdm
 
 from pyrmsd import read_c
 
-version = 1.0
+version = 1.1
 
-CONCUR_TASKS = 2
+CONCUR_TASKS = 1
 
 VARIABLES = tuple('Min Cycle Frame Omega M66cAcB M66cBcG M66cGsD \
             alpha alphap beta gamma phi tau \
@@ -45,6 +47,15 @@ MIN_OLD = tuple("a a_fix-lys-ile a_fix-lys-ile-glu a_fix-met105 \
             a_fix-met105-lys-ile a_fix-met105-lys-ile-glu \
             a_fix-met105-lys-ile-glu-ser a_fix-lys-ile-glu-ser \
             a_fix-met105-lys-ile-glu-ser-hb a_fix-lys-ile-glu-ser-hb".split())
+
+MIN_MODELING = tuple("v38e v38e1 v38e3 v38e5 v38e7 \
+            a_fix-met105-lys-ile-glu-ser-hb v36b v36c v38s0 v38a \
+            v38b v38c v38d \
+            v38f v38g v38h v39d v38i v38j v38k v38l v38m v38n \
+            v38o v38p v38q v38r v38s v38t v38u v38v v38w v38x v38y".split())
+
+MIN_PREDICT = tuple("v76s0 v76a v76b v76c v76d v76e v76h v76i v76j v76k v76m \
+            v76n v76o".split())
 
 FIRST_CYCLE, LAST_CYCLE = 2, 92
 FIRST_FRAME, LAST_FRAME, SKIP_FRAME = 10, 200, 10
@@ -170,14 +181,11 @@ def converged(log):
 
 def get_omega(mndo_out, chemsh_log):
     DEBUG = False
-    Omega = 'NA'
     try:
         with open(mndo_out, 'r') as fo:
             lines = fo.read().splitlines()
     except FileNotFoundError:
-        msg = "Warning: {} missing although {} signals convergence!"
-        print(msg.format(mndo_out, chemsh_log))
-        return Omega
+        return 'NA'
 
     n_match = 0
     for line in lines:
@@ -188,23 +196,70 @@ def get_omega(mndo_out, chemsh_log):
                 print("excitation energy from", mndo_out, ":", Omega)
             Omega = float(Omega)
     if n_match == 0:
-        print("Warning: No excitation energy found in", mndo_out)
+        if 'om2-opt' in mndo_out:
+            mndo_in = mndo_out.replace('mndo.out', 'mndo.in')
+            assert mndo_in != mndo_out
+            with open(mndo_in, 'r') as fo:
+                fs = fo.read()
+            if not 'iuvcd=2 ipop=2' in fs:
+                msg = "{} does not contain excited-state emission energy"\
+                    + " - trying to calculate it..."
+                print(msg.format(mndo_in), end='')
+                if not os.path.exists(mndo_in + '.bak'):
+                    shutil.copy2(mndo_in, mndo_in + '.bak')
+                fs = fs.replace('ktrial=11', 'iuvcd=2 ipop=2 ktrial=11')
+                fs = fs.replace('numatm=4035', 'numatm=4035 +\nkci=5 '\
+                              + 'ici1=42 ici2=43 ioutci=1 movo=0 multci=1 '\
+                              + 'nciref=3 +\nmciref=0 levexc=1 iroot=2 lroot=2')
+                fs = fs.replace('jop=-2', 'jop=-1')
+                with open(mndo_in, 'w') as fo:
+                    fo.write(fs)
+                mndo_call = 'mndo99 < ' + mndo_in + ' > ' + mndo_out
+                assert CONCUR_TASKS == 1
+                subprocess.call(mndo_call, shell=True)  # must block
+                subprocess.call('rm fort.*', shell=True)
+                with open(mndo_out, 'r') as fo:
+                    lines = fo.read().splitlines()
+                n_match = 0
+                for line in lines:
+                    if 'State  2' in line:
+                        Omega = line.split()[5]
+                        n_match += 1
+                        Omega = float(Omega)
+                if n_match == 1:
+                    print(' SUCCESS')
+                else:
+                    print(' FAILURE')
+                    shutil.copy2(mndo_in + '.bak', mndo_in)
+                    return 'NA'
+                    exit()
+            else:
+                print("Warning: found iuvcd=2 in", mndo_in, "but no excitation"\
+                    + " energy in", mndo_out)
+                return 'NA'
+        else:
+            print("Warning: No excitation energy found in", mndo_out)
+            return 'NA'
     elif n_match > 1:
         print("Warning: 'State  2' found several times in", mndo_out)
     return Omega
 
 
-async def read_one(Min, Cycle, Frame, variables, semaphore, verbose):
+async def read_one(Min, Cycle, Frame, variables, mode, semaphore, verbose):
     DEBUG = False
-    NO_DATA = False     # return value if files are missing
+    NO_DATA = False         # return value if files are missing
     loop = asyncio.get_event_loop()
 
-    opt = 'cro-opt'
+    if mode == 'analyse':
+        opt = 'cro-opt'
+    else:
+        opt = 'om2-opt'     # evaluate variables from om2-opt
     i = str(Cycle) + '-' + str(Frame)
     pth = 'snapshots-' + str(Min)
     log = pth + '/' + opt + '-' + i + '.log'
     sge = pth + '/' + opt + '-' + i + '.sge'
-    mndo_out = pth + '/' + opt + '-' + i + '-mndo.out'
+    mndo_out = pth + '/cro-opt-' + i + '-mndo.out'  # for Omega
+    abs_out = pth + '/om2-opt-' + i + '-mndo.out'   # for Abs
     optc = pth + '/' + opt + '-' + i + '-opt.c'
 
     # Check file stati
@@ -232,39 +287,64 @@ async def read_one(Min, Cycle, Frame, variables, semaphore, verbose):
         print("Warning:", optc, "missing although", log, "signals convergence!")
         return NO_DATA
 
+    if mode in ('model', 'predict'):
+        async with semaphore:
+            Abs = await loop.run_in_executor(None, get_omega, abs_out, log)
+
     async with semaphore:
         if DEBUG:
             print("   ", Min, Cycle, Frame, "get_omega...")
         Omega = await loop.run_in_executor(None, get_omega, mndo_out, log)
-    if Omega == 'NA':
-        return NO_DATA
+    if Omega == 'NA' and not mode == 'predict':
+        msg = 'Could not get Omega for {} {}-{} (required in mode {}).'
+        raise ValueError(msg.format(Min, Cycle, Frame, mode))
+
     async with semaphore:
         if DEBUG or verbose:
             print("   ", Min, Cycle, Frame, "reading coordinates...")
         na, atoms, _ = await loop.run_in_executor(None, read_c, optc)
 
-    # Now we have all raw data in memory. Time to evaluate the variable...
+    # Now we have all raw data in memory. Time to evaluate the variable.
+    # All values in snapshot are expected to be of type str.
     snapshot = defaultdict(lambda: 'NA')
     snapshot['Min'] = Min
     snapshot['Cycle'] = str(Cycle)
     snapshot['Frame'] = str(Frame)
-    snapshot['Omega'] = "{:.4f}".format(Omega)
+    if Omega == 'NA':
+        snapshot['Omega'] = 'NA'
+    else:
+        snapshot['Omega'] = "{:.4f}".format(Omega)
+    if mode in ('model', 'predict'):
+        if Abs == 'NA':
+            msg = "Missing Abs in {} {}-{} (needed in mode {})."
+            raise ValueError(msg.format(Min, Cycle, Frame, mode))
+        snapshot['Abs'] = "{:.4f}".format(Abs)
+        if 's0' in Min or 'qm12' in Min or 'qm15' in Min:
+            State = 'S0'
+        else:
+            State = 'S1'
+        snapshot['State'] = State
+    
     for var in VARIABLES:
-        if var in ('Min', 'Cycle', 'Frame', 'Omega'):
+        if var in ('Min', 'Cycle', 'Frame', 'Omega', 'Abs', 'State'):
             continue
         snapshot[var] = get_value(variables[var], atoms)
 
     return snapshot
 
 
-def read_all(Mins, verbose):
+def read_all(Mins, mode, verbose):
     "Return a list of defaultdict's with keys from VARIABLES, default: 'NA'."
     DEBUG = False
     variables = define_variables()
     tasks = {}
     loop = asyncio.get_event_loop()
     semaphore = asyncio.Semaphore(CONCUR_TASKS)
-    opt = 'cro-opt'
+    if mode in ('analyse', 'model'):
+        opt = 'cro-opt'     # For "analyse" and "model", Omega is required,
+    else:                   # consider only snapshots where cro-opt exists.
+        opt = 'om2-opt'     # For "predict", all om2-opt are used (Omega
+                            # exists only for a small sample).
     print("Preparing tasks...")
     for Min in Mins:
         pth = 'snapshots-' + str(Min)
@@ -279,7 +359,8 @@ def read_all(Mins, verbose):
             frames = set(os.path.basename(f).replace('.', '-').split('-')[3] for f in logfiles)
             n_frames += len(frames)
             for Frame in frames:
-                coro_obj = read_one(Min, Cycle, Frame, variables, semaphore, verbose)
+                coro_obj = read_one(Min, Cycle, Frame, variables, mode, 
+                                    semaphore, verbose)
                 task_name = "Min {} Cycle {} Frame {}".format(Min, Cycle, Frame)
                 tasks[asyncio.ensure_future(coro_obj)] = task_name
                 if DEBUG:
@@ -349,8 +430,9 @@ def test():
     loop = asyncio.get_event_loop()
     semaphore = asyncio.Semaphore(CONCUR_TASKS)
     verbose = True
+    mode = 'analyse'
     snapshot = loop.run_until_complete(read_one(
-            Min, Cycle, Frame, variables, semaphore, verbose))
+            Min, Cycle, Frame, variables, mode, semaphore, verbose))
     phi = get_value(variables['phi'], atoms)
     assert phi == "12.07"
     phi = snapshot['phi']
@@ -391,7 +473,8 @@ def main():
                     'snapshots-s0.csv contains qm12 and qm14-v38 S0 snapshots\n'
                     'snapshots-old.csv contains snapshots from older potentials')
     parser.add_argument("--csv", "-c",
-                                help='[a|s0|old] for S1/S0/pre-v36 snapshots',
+                                help='[a|s0|old|predict|model] for \
+                                S1/S0/pre-v36 snapshots or for prediction/modeling',
                                 default='a')
     parser.add_argument("--simulate", "-s",
                                 help="Dry run, don't write csv file.",
@@ -405,6 +488,8 @@ def main():
 
     args = parser.parse_args()
 
+    mode = 'analyse'
+    global VARIABLES    # need to add some in modes "predict" and "model"
     if args.test:
         csv = 'snapshots-test.csv'
         Mins = tuple('v38s'.split())
@@ -417,6 +502,16 @@ def main():
     elif args.csv == 'old':
         csv = 'snapshots-old.csv'
         Mins = MIN_OLD
+    elif args.csv == 'model':
+        csv = 'snapshots-for-modeling.csv'
+        Mins = MIN_MODELING
+        mode = 'model'
+        VARIABLES += ('State', 'Abs')
+    elif args.csv == 'predict':
+        csv = 'snapshots-for-prediction.csv'
+        Mins = MIN_PREDICT
+        mode = 'predict'
+        VARIABLES += ('State', 'Abs')
     else:
         msg = "No rule for making csv file {}".format(args.csv)
         raise ValueError(msg)
@@ -440,14 +535,14 @@ def main():
         print(nvar, "variables:", VARIABLES)
 
     # Get snapshot data from files
-    data = read_all(Mins, verbose)
+    data = read_all(Mins, mode, verbose)
 
     # Write csv file
     csv_header = ','.join(VARIABLES) + '\n'
     with open(csv, 'w') as fo:
         fo.write(csv_header)
         for snapshot in data:
-            line = ','.join(snapshot[x] for x in VARIABLES)
+            line = ','.join(str(snapshot[x]) for x in VARIABLES)
             fo.write(line + '\n')
 
     # Final Report
