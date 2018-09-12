@@ -67,6 +67,8 @@ Variable = namedtuple('Variable', 'var_type ind dihe_shift ref_coords'.split())
 
 
 def define_variables():
+    """In this version, all geometric variable definitions are retrieved from
+    the file GET_SNAPSHOTS_SCRIPT."""
     DEBUG = False
     variables = {}
     with open(GET_SNAPSHOTS_SCRIPT, 'r') as fo:
@@ -161,9 +163,8 @@ def get_dihedral(i1, i2, i3, i4, atoms):
         sign = -1
     if abs(uv_vw) < 1e-6:
         return 90.0 * sign
-    else:
-        norm = math.sqrt(uvxvw.dot(uvxvw))
-        return sign * 180 / math.pi * math.atan2(norm, uv_vw)
+    norm = math.sqrt(uvxvw.dot(uvxvw))
+    return sign * 180 / math.pi * math.atan2(norm, uv_vw)
 
 
 def get_distance(i1, i2, atoms):
@@ -307,7 +308,7 @@ async def read_one(Min, Cycle, Frame, variables, mode, semaphore, verbose):
     # Now we have all raw data in memory. Time to evaluate the variable.
     # All values in snapshot are expected to be of type str.
     snapshot = defaultdict(lambda: 'NA')
-    snapshot['Min'] = Min
+    snapshot['Min'] = str(Min)
     snapshot['Cycle'] = str(Cycle)
     snapshot['Frame'] = str(Frame)
     if Omega == 'NA':
