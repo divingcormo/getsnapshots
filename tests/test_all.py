@@ -17,17 +17,17 @@ if not os.getcwd().endswith('/tests'):
     os.chdir('tests')
     #os.chdir('getsnapshots/tests')
 
-# If this is not an installed package, append it to sys.path. Otherwise, Python
-# won't find modules in ../
+# The tests are designed to fail if the package is not installed in current 
+# environment (either via "pip install -e ." or for real).
+# If for some reason this cannot be achieved, add the appropriate path to
+# sys.path.
 root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 src_path = root_path + '/src'
 package_path = src_path + '/getsnapshots'
-print("sys.path =",sys.path)                                                       # for debugging
-assert package_path in sys.path or src_path in sys.path or root_path in sys.path   # for debugging
-if not (package_path in sys.path or src_path in sys.path):
-    sys.path.append(package_path)
-    if os.path.exists('../setup.py'):
-        print("Found ../setup.py but package was not in sys.path")
+add_path = None
+print("sys.path:", sys.path)
+if add_path and not (add_path in sys.path):
+   sys.path.append(add_path)
 
 # Check if we are in a virtualenv.
 if hasattr(sys, 'real_prefix'):

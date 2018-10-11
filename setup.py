@@ -22,8 +22,8 @@ script_entry_points = [
 # in requirements-dev.txt and requirements-docs.txt
 install_requires = [
     'setuptools',
-    'tqdm>=4.26.0',
-    'numpy>=1.15',
+    'tqdm',
+    'numpy',
 ]
 
 classifiers = [

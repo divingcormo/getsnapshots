@@ -12,6 +12,8 @@ test:
 coverage:
 	py.test -v --cov=. --cov-report term-missing $(TESTS)
 
+tox:
+	tox -v
 build:
 	python setup.py sdist bdist_wheel
 
