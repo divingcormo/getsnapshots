@@ -20,3 +20,8 @@ docs:
 
 push:
 	git push -u origin master
+
+distclean:
+	rm -r build dist 
+	rm src/getsnapshots.egg-info/SOURCES.txt
+	rm -r docs/build

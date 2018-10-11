@@ -24,7 +24,7 @@ script_entry_points = [
 
 ## how obtain this list automatically? tox? requirements.txt?
 install_requires = [
-    'pip>=9,<=18',
+    'pip>=9',
     'setuptools',
     'tqdm>=4.26',
     'numpy>=1.15',
@@ -56,6 +56,8 @@ classifiers = [
     #'Programming Language :: Python :: 3.4',
     #'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
+
+    'Operating System :: OS Independent',
 ]
 
 
