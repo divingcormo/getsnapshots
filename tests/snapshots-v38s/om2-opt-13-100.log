@@ -2545,8 +2545,7 @@ Testing convergence  in cycle   52
   RMS step  3.6788E-04 Target: 1.3333E-03 converged?  yes
   Max grad  7.4340E-05 Target: 5.0000E-04 converged?  yes component   139
   RMS grad  2.4731E-05 Target: 3.3333E-04 converged?  yes
-Converged!
- converged
+Simultate failted opt
 Destroying all HDLC residues
 
 

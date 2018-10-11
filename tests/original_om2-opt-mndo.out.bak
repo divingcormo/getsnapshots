@@ -1,0 +1,110 @@
+
+
+
+ PROGRAM MNDO2005.
+ VERSION 7.0 OF 4 AUGUST 2005.
+
+ COPYRIGHT BY WALTER THIEL,
+ MAX-PLANCK-INSTITUT FUER KOHLENFORSCHUNG,
+ D-45470 MUELHEIM, GERMANY.
+
+
+ ***** STANDARD INPUT USING KEYWORDS *****
+
+ IOP    =   -6     JOP    =   -2     IGEOM  =    1     IFORM  =    1     MMINP  =    2
+ NSAV15 =    4     ICUTS  =   -1     ICUTG  =   -1     ISCF   =   11     IPLSCF =   11
+ KHARGE =   -1     KTRIAL =   11     IPUBO  =    1     KITSCF =  100     NPRINT =   -4
+ IFAST  =    2     NUMATM = 4035     MMCOUP =    2     MMLINK =    2     NLINK  =    5
+
+
+ DSTEP  =  0.0000  DPREC  =  0.0000
+
+
+ ***********************************************************************
+ * INPUT OF OPTIONS VIA KEYWORDS
+ * NUMBER OF MNDO97 KEYWORDS FOUND: 20
+ * MOPAC KEYWORDS NOT FOUND: IMOPAC=-1
+ ***********************************************************************
+
+
+
+ *** OPTIONS FROM THE FIRST LINE OF INPUT    ***
+ *** DEFINED EITHER EXPLICITLY OR BY DEFAULT ***
+
+ LIMIT  =    0     IOP    =   -6     JOP    =   -2     IGEOM  =    1     IFORM  =    1
+ NEXMOL =    1     MPLIB  =    0     IEF    =    0     IDIIS  =    0     INREFD =    0
+ IPAROK =    0     MMINP  =    2     NMR    =    0     NSAV7  =    0     NSAV8  =    0
+ NSAV9  =    0     NSAV13 =    0     NSAV15 =    4     NSAV16 =    0     IMMOK  =    0
+ IHBOND =    0     IFLD1  =    0     IFLD2  =    0     IFLD3  =    0     ICUTR  =   -1
+ ICUTG  =   -1     IEXBAS =    0     ICOSMO =    0     IPSANA =    0
+
+
+
+ OM2
+
+ GRADIENT CALCULATION FOR INPUT GEOMETRY
+
+ INPUT IN CARTESIAN COORDINATES
+
+ INPUT OF MOLECULAR DATA IN FREE FORMAT
+
+
+
+ *** OPTIONS FROM THE SECOND LINE OF INPUT   ***
+ *** DEFINED EITHER EXPLICITLY OR BY DEFAULT ***
+
+
+ MAXEND =    0     MAXLIN =    4     MAXRTL = 9999     ISCF   =   11     IPLSCF =   11
+ MIDDLE =    0     IPRINT =    0     KPRINT =    0     LPRINT =    0     MPRINT =    0
+ JPRINT =    0     IPREC  =    1     ICONV  =    0     IHESS  =    0     IDFP   =    0
+ NREPET =    3     LINITG =   10     LCONVG =   10     LGDUM  =    0     IHDLC1 =    0
+ IHDLC2 =    0     IHDLC3 =    0     INGEOM =    0     INTDIR =    0     LINDMS =    0
+ LINDIA =    0     LINFRG =    0     INPFRG =    0     INP21  =    0     INP22  =    0
+ INP23  =    0     INP24  =    0     INP25  =    0
+
+
+
+
+ ChemShell MNDO interface:
+
+
+     INPUT GEOMETRY
+
+...
+
+
+     SCF HEAT OF FORMATION     -441.86218 KCAL/MOL
+     SCF BINDING ENERGY        -266.75262 EV
+     SCF TOTAL ENERGY         -6634.65286 EV
+     ELECTRONIC ENERGY       -52093.20229 EV
+     NUCLEAR ENERGY           45458.54943 EV
+     IONIZATION ENERGY            6.54316 EV
+     SCF CYCLES                  22
+
+
+     THE DENSITY MATRIX HAS BEEN SAVED ON FILE 11
+
+...
+     TIME FOR ENERGY EVALUATION       0.362 SECONDS
+     TIME FOR GRADIENT EVALUATION     1.276 SECONDS
+
+...
+
+     CARTESIAN GRADIENT NORM                 79.26626
+
+
+     CARTESIAN QM+MM GRADIENT NORM          131.12194
+
+
+
+     GRADIENTS FOR GEOMETRY OPTIMIZATION
+
+        I   LOCATION             VARIABLE    GRADIENT
+
+
+
+     GRADIENT NORM                            0.00000
+
+
+
+ COMPUTATION TIME                 1.650 SECONDS

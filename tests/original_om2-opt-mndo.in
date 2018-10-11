@@ -1,0 +1,9 @@
+kharge=-1 iop=-6      +
+nprint=-4 iscf=11 iplscf=11 kitscf=100 +
+icuts=-1 icutg=-1 dprec=1d-8 dstep=1d-6 ifast=2 ktrial=11 +
+igeom=1 iform=1 nsav15=4 ipubo=1 jop=-2 +
+mminp=2 mmcoup=2 mmlink=2 nlink=5 numatm=4035
+ChemShell MNDO interface:
+
+6     1.74031147 0    12.62031213 0     2.20485487 0
+...

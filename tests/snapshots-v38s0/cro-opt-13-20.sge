@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=cro-v38s-XXX --nodes=1 --partition=serial --mem=1990mb  --output=SGEout --error=SGEout --open-mode=append
+#SBATCH --job-name=cro-v38s0-13-20 --nodes=1 --partition=serial --mem=1990mb  --output=SGEout --error=SGEout --open-mode=append
 
 name=snapshots-cro-opt
 pth=~/molecules/gfp/mplum-chemsh/6b-S1_om2-mrcis
-files=$pth/snapshots-v38s
+files=$pth/snapshots-v38s0
 preoptfiles=$files
-crmpth=/home/wanko/molecules/gfp/mplum-charmm/model6b-nowater-s1-charges/05_md.files/data/snapshots
+crmpth=~/molecules/gfp/mplum-charmm/model6b-nowater/05_md.files/data/snapshots
 
 JOB_ID=$SLURM_JOB_ID ; TMPDIR=/scratch/$USER/$JOB_ID ; mkscratch $TMPDIR || exit
 
@@ -17,9 +17,9 @@ PATH="$PATH":$chemshroot/bin:$chemshroot/scripts
 echo "******" `date` "Job $JOB_ID (${name}) on" `hostname` " ******"
 cd $pth || exit
 
-# determine input coordinate file: XXX = 1-10, frame = 1-frame-10
-frame=`echo "XXX" | sed 's/-/-frame-/'`
-min=2qlg6b-ani-qm14-fix-v38s-${frame}-qm14-min
+# determine input coordinate file: 13-20 = 1-10, frame = 1-frame-10
+frame=`echo "13-20" | sed 's/-/-frame-/'`
+min=2qlg6b-ani-qm14-fix-v38-${frame}-qm14-min
 
 # cp input files
 echo "charmm input geometry: $crmpth/$min.cor"
@@ -61,11 +61,11 @@ if ! [ -d $files ]; then mkdir $files ; fi
 #cpc -f $pth/$name.files
 sed '/Restraint .* cart/d' ${name}.log > z
 mv z ${name}.log
-cp ${name}.log $files/cro-opt-XXX.log || exit
-cp mndo.in $files/cro-opt-XXX-mndo.in || exit
-cp mndo.out $files/cro-opt-XXX-mndo.out || exit
-cp ${name}-opt.c $files/cro-opt-XXX-opt.c || exit
-cp ${name}-opt.pdb $files/cro-opt-XXX-opt.pdb || exit
+cp ${name}.log $files/cro-opt-13-20.log || exit
+cp mndo.in $files/cro-opt-13-20-mndo.in || exit
+cp mndo.out $files/cro-opt-13-20-mndo.out || exit
+cp ${name}-opt.c $files/cro-opt-13-20-opt.c || exit
+cp ${name}-opt.pdb $files/cro-opt-13-20-opt.pdb || exit
 
 echo "job $JOB_ID ($name) on `hostname` files after chemsh termination:"
 ls -lrt

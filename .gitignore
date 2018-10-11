@@ -2,3 +2,10 @@ __pycache__/
 *~
 snapshots-a.csv
 snapshots-test.csv
+env
+obsolete
+build
+dist
+docs/build
+*.egg-info
+.coverage
