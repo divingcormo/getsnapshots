@@ -17,3 +17,6 @@ build:
 
 docs:
 	python setup.py build_sphinx
+
+push:
+	git push -u origin master

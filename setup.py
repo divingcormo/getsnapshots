@@ -14,9 +14,9 @@ package_name = 'getsnapshots'
 version_from_module = 'snap2csv'
 author = "Marius Wanko"
 email = "marius.wanko@gmail.com"
-description = "This is a test package wrapping the snap2csv script."
+description = "This is a test package wrapping a few scripts."
 keyword_str = "CHARMM molecular dynamics trajectory data analysis"
-project_url = "https://github.com/divingcormoran/getsnapshots/"
+project_url = "https://github.com/divingcormo/getsnapshots/"
 script_entry_points = [
     'get-snapshots = getsnapshots.snap2csv:main',
     'pyrmsd = getsnapshots.pyrmsd:main',
@@ -50,11 +50,11 @@ classifiers = [
 
     # Specify the Python versions you support here. In particular, ensure
     # that you indicate whether you support Python 2, Python 3 or both.
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
+    #'Programming Language :: Python :: 2',
+    #'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.4',
-    'Programming Language :: Python :: 3.5',
+    #'Programming Language :: Python :: 3.4',
+    #'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
 ]
 
