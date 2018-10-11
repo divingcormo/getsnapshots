@@ -1,10 +1,14 @@
+--index-url https://pypi.python.org/simple/
+-e .
+
+# Tests
 atomicwrites==1.2.1
 attrs==18.2.0
 more-itertools==4.3.0
-numpy==1.15.2
 pluggy==0.7.1
 py==1.6.0
 pytest>=3.8
 six==1.11.0
-tqdm==4.26.0
-sphinx
+
+# Code checkers
+

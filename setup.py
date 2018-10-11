@@ -6,10 +6,6 @@ import os
 
 from setuptools import setup, find_packages
 
-# This is only necessary when not using setuptools/distribute.
-from sphinx.setup_command import BuildDoc
-cmdclass = {'build_sphinx': BuildDoc}
-
 package_name = 'getsnapshots'
 version_from_module = 'snap2csv'
 author = "Marius Wanko"
@@ -22,11 +18,11 @@ script_entry_points = [
     'pyrmsd = getsnapshots.pyrmsd:main',
 ]
 
-## how obtain this list automatically? tox? requirements.txt?
+# Requirements for checking, testing, and doc-building can be found
+# in requirements-dev.txt and requirements-docs.txt
 install_requires = [
-    'pip>=9',
     'setuptools',
-    'tqdm>=4.26',
+    'tqdm>=4.26.0',
     'numpy>=1.15',
 ]
 
@@ -42,11 +38,11 @@ classifiers = [
 
     # Indicate who your project is intended for
     'Intended Audience :: Science/Research',
-    'Topic :: Scientific/Engineering :: Chemistry'
+    'Topic :: Scientific/Engineering :: Chemistry',
     'Natural Language :: English',
 
     # Pick your license as you wish (should match "license" above)
-    'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)'
+    'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
 
     # Specify the Python versions you support here. In particular, ensure
     # that you indicate whether you support Python 2, Python 3 or both.
@@ -144,25 +140,7 @@ setup(
     license=license,
     keywords=keyword_str,
     url=project_url,
-    #project_urls={
-    #    "Bug Tracker": "https://bugs.example.com/HelloWorld/",
-    #    "Documentation": "https://docs.example.com/HelloWorld/",
-    #    "Source Code": "https://code.example.com/HelloWorld/",
-    #}
     classifiers=classifiers,
-
-    # Sphinx (replace hyphens in conf.py variable names with underscores).
-    cmdclass=cmdclass,
-    command_options={
-        'build_sphinx': {
-            'project': ('setup.py', package_name),
-            'version': ('setup.py', __version__),
-            'release': ('setup.py', __version__),
-            'source_dir': ('setup.py', 'docs/source'),
-            'build_dir': ('setup.py', 'docs/build'),
-            'copyright': ('setup.py', f'{date.today().year}, {author}'),
-        },
-    },
 
     # Entry points are grouped by custom strings (dict keys).
     entry_points={
