@@ -115,25 +115,25 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages('src'),
 
-    ## what are these good for?
-    scripts=['src/getsnapshots/pyrmsd.py'],  # pyrmsd is included in built/scripts-3.6/
-    # probably collects stand-alone script.py files. pyrmsd and get-snapshots could be
-    # provided by either entry points (main function) or by using the module as script.
+    # Include additional modules that are not in any package.
     #py_modules=[os.path.splitext(os.path.basename(path))[0] for path in glob('src/*.py')],
-    # "packages" probably implies files that would be covered by "py_modules" and "scripts".
-    # Also test/test*.py under src, README, README.txt, README.rst (3.7+), setup.py and setup.cfg
-    # are included by default.
+
+    # Provide a whole module as a python script in /usr/bin/.
+    #scripts=['src/getsnapshots/pyrmsd.py'],
+    # If the package is to be installed anyway, better use an entry point, 
+    # which just creates a script that links to the specified function.
 
     install_requires=install_requires,
 
-    # This may fail, better use MANIFEST.in and "include_package_data=True"
+    # This may fail, better use MANIFEST.in and "include_package_data=True":
     #package_data={
     #    '': ['*.txt', '*.rst', '*.bash'],
     #    'tests': ['*'],
     #},
+
     include_package_data=True,
 
-    # metadata to display on PyPI
+    # Metadata to display on PyPI.
     author=author,
     author_email=email,
     description=description,
