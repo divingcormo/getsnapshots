@@ -242,7 +242,7 @@ def read_pdb(filename, chain="A", conformation="A", rm_link_atoms=False,
     ELEMENT = slice(76, 78)     # Element symbol
     CHARGE = slice(78, 80)      # Charge on the atom (currently ignored)
 
-    na = 0
+    natoms = 0
     nlink = 0
     n_lines_66 = 0
     n_lines_78 = 0
@@ -308,7 +308,7 @@ def read_pdb(filename, chain="A", conformation="A", rm_link_atoms=False,
             resid = int(resid)
 
         # Add atom to list.
-        na += 1
+        natoms += 1
         atom = [float(line[X].strip()), float(line[Y].strip()),
                 float(line[Z].strip()), element, segid, resname,
                 resid, float(line[BFACTOR].strip())]
@@ -325,7 +325,7 @@ def read_pdb(filename, chain="A", conformation="A", rm_link_atoms=False,
         print("# lines with atoms in conformation " + conformation + ":",
               n_lines_altloc)
 
-    return na, atoms, "Data exctracted from {filename}".format_map(vars())
+    return natoms, atoms, "Data exctracted from {filename}".format_map(vars())
 
 
 def get_rmsd(atoms1, atoms2, selection=None):

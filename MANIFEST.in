@@ -1,4 +1,5 @@
-recursive-include src *.md *.rst *.bash LICENSE
+recursive-include src *.bash
+include LICENSE *.md *.rst
 include *.txt
 include .coveragerc
 include Makefile
@@ -17,3 +18,4 @@ recursive-include tests *.pdb
 recursive-include tests *.py
 recursive-include tests *.sge
 recursive-include tests *.xyz
+exclude todo.txt

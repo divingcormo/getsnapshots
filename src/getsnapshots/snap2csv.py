@@ -42,33 +42,37 @@ __version__ = '1.2'
 
 CONCUR_TASKS = 1
 
-VARIABLES = tuple('Min Cycle Frame Omega M66cAcB M66cBcG M66cGsD \
-            alpha alphap beta gamma phi tau \
-            E16cAcB E16rot E16orie L199rot K70cDcE K70cGcD K70cBcG \
-            I65cAcB I65rot Q109rot S111rot S62rot L119rot \
-            hbE16acy hbI65acy bE16oh I197rot Q213rot \
-            hbE215imi hbW239o64 hbW239o66 hbW239E16 hbE16W239 hbW240imi \
-            hbW240E215 hbK70E148 hbK70imi hbW304imi hbW239acy hbQ213acy \
-            hbK70W301 dW304Trp93 dW240Q42 M18cBcG M18cGsD hbW230Q109 \
-            dW301Q109 hbW304K70 o66orie bb66dihe hbW260phe hbS146phe hbR95imi \
-            hbW240n2 hbW230S111 hbW230o66 hbW230E16 hbW230o64 hbW230W239 \
-            hbW301W230 hbW301W304 hbW301S111 hbW301o66 hbW304E148 \
-            W301rmsd W304rmsd'.split())    # ordered, immutable
+VARIABLES = tuple(
+    'Min Cycle Frame Omega M66cAcB M66cBcG M66cGsD '
+    'alpha alphap beta gamma phi tau '
+    'E16cAcB E16rot E16orie L199rot K70cDcE K70cGcD K70cBcG '
+    'I65cAcB I65rot Q109rot S111rot S62rot L119rot '
+    'hbE16acy hbI65acy bE16oh I197rot Q213rot '
+    'hbE215imi hbW239o64 hbW239o66 hbW239E16 hbE16W239 hbW240imi '
+    'hbW240E215 hbK70E148 hbK70imi hbW304imi hbW239acy hbQ213acy '
+    'hbK70W301 dW304Trp93 dW240Q42 M18cBcG M18cGsD hbW230Q109 '
+    'dW301Q109 hbW304K70 o66orie bb66dihe hbW260phe hbS146phe hbR95imi '
+    'hbW240n2 hbW230S111 hbW230o66 hbW230E16 hbW230o64 hbW230W239 '
+    'hbW301W230 hbW301W304 hbW301S111 hbW301o66 hbW304E148 '
+    'W301rmsd W304rmsd'.split())    # ordered, immutable
 
-MIN_S1 = tuple("v36b v36c v38a v38b v38c v38d v38f v38g v38h v39d \
-            v38e v38e1 v38e3 v38e5 v38e7\
-            v38i v38j v38k v38l v38m v38n v38o v38p v38q v38r \
-            v38s v38t v38u v38v v38w v38x v38y \
-            v76a v76b v76c v76d v76e v76h v76i v76j v76k v76m v76n v76o".split())
+MIN_S1 = tuple(
+    'v36b v36c v38a v38b v38c v38d v38f v38g v38h v39d '
+    'v38e v38e1 v38e3 v38e5 v38e7 '
+    'v38i v38j v38k v38l v38m v38n v38o v38p v38q v38r '
+    'v38s v38t v38u v38v v38w v38x v38y '
+    'v76a v76b v76c v76d v76e v76h v76i v76j v76k v76m v76n v76o'.split())
 
-MIN_S0 = tuple("a_qm12 v38s0 v76s0 a_s0-charges-fix-met105-lys-ile-glu-ser \
-            a_s0-charges-fix-met105-lys-ile-glu-ser-hb".split())
+MIN_S0 = tuple(
+    'a_qm12 v38s0 v76s0 a_s0-charges-fix-met105-lys-ile-glu-ser '
+    'a_s0-charges-fix-met105-lys-ile-glu-ser-hb'.split())
 
-MIN_OLD = tuple("a a_fix-lys-ile a_fix-lys-ile-glu a_fix-met105 \
-            a_fix-met105-glu a_fix-met105-lys a_fix-met105-lys-glu \
-            a_fix-met105-lys-ile a_fix-met105-lys-ile-glu \
-            a_fix-met105-lys-ile-glu-ser a_fix-lys-ile-glu-ser \
-            a_fix-met105-lys-ile-glu-ser-hb a_fix-lys-ile-glu-ser-hb".split())
+MIN_OLD = tuple(
+    'a a_fix-lys-ile a_fix-lys-ile-glu a_fix-met105 '
+    'a_fix-met105-glu a_fix-met105-lys a_fix-met105-lys-glu '
+    'a_fix-met105-lys-ile a_fix-met105-lys-ile-glu '
+    'a_fix-met105-lys-ile-glu-ser a_fix-lys-ile-glu-ser '
+    'a_fix-met105-lys-ile-glu-ser-hb a_fix-lys-ile-glu-ser-hb'.split())
 
 """
 For GS, calculate both GS abs (Min=="*abs") and cro-opt emission (Min=="*s0").
@@ -304,7 +308,7 @@ def get_omega(mndo_out):
     msg = "{} does not contain excited-state emission energy"\
         + " - trying to calculate it..."
     print(msg.format(mndo_out), end='')
-    sys.stdout.flush
+    sys.stdout.flush()
     if not os.path.exists(mndo_in + '.bak'):
         shutil.copy2(mndo_in, mndo_in + '.bak')
 
@@ -314,10 +318,11 @@ def get_omega(mndo_out):
     elif 'iuvcd=' not in fstr:
         # This is an om2-opt, modify mndo.in for excited-state calc.
         fstr = fstr.replace('ktrial=11', 'iuvcd=2 ipop=2 ktrial=11')
-        fstr = fstr.replace('numatm=4035', 'numatm=4035 +\nkci=5 '
-                        + 'ici1=42 ici2=43 ioutci=1 movo=0 multci=1 '
-                        + 'nciref=3 +\nmciref=0 levexc=1 '
-                        + 'iroot=2 lroot=2')
+        fstr = fstr.replace('numatm=4035',
+                            'numatm=4035 +\nkci=5 '
+                            'ici1=42 ici2=43 ioutci=1 movo=0 multci=1 '
+                            'nciref=3 +\nmciref=0 levexc=1 '
+                            'iroot=2 lroot=2')
     else:
         shutil.copy2(mndo_in + '.bak', mndo_in)
         msg = "Analysis of {} failed, no plan to handle this case."
@@ -342,7 +347,7 @@ def get_omega(mndo_out):
         print(' FAILURE')
         shutil.copy2(mndo_in + '.bak', mndo_in)
         return 'NA'
-        exit()  # Or stop and investigate the problem?
+        #exit()  # Or stop and investigate the problem?
     print(' SUCCESS')
     return Omega
 
@@ -440,7 +445,7 @@ async def read_one(Min, Cycle, Frame, variables, mode, semaphore, verbose):
     async with semaphore:
         if DEBUG or verbose:
             print("   ", Min, Cycle, Frame, "reading coordinates...")
-        na, atoms, _ = await loop.run_in_executor(None, read_c, optc)
+        _, atoms, _ = await loop.run_in_executor(None, read_c, optc)
 
     # Now we have all raw data in memory. Time to evaluate the variable.
     # All values in snapshot are expected to be of type str.

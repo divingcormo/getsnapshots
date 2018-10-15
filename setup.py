@@ -52,6 +52,7 @@ classifiers = [
     #'Programming Language :: Python :: 3.4',
     #'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
 
     'Operating System :: OS Independent',
 ]
@@ -85,8 +86,8 @@ else:
     raise ValueError(msg.format(version_from_module))
 
 for filename in 'README.rst README.md README.txt README'.split():
-    if os.path.exists(f'{package_pth}/{filename}'):
-        with open(f'{package_pth}/{filename}') as fp:
+    if os.path.exists(filename):
+        with open(filename) as fp:
             README = fp.read()
         break
 else:
@@ -94,7 +95,7 @@ else:
     README = ''
 
 # Get license (and version if applicable).
-with open(f'{package_pth}/LICENSE') as fp:
+with open('LICENSE') as fp:
     lines = fp.readlines()
 for line in lines:
     if 'GNU GENERAL PUBLIC LICENSE' in line:

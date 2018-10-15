@@ -3,27 +3,34 @@ TESTS=tests
 
 check:
 	# No unused imports, no undefined vars
-	flake8 pyrmsd.py get_snapshots.py
-	pylint pyrmsd.py get_snapshots.py
+	flake8 --exit-zero src
+	pylint src
 
 test:
 	py.test -v $(TESTS)
 
 coverage:
-	py.test -v --cov=. --cov-report term-missing $(TESTS)
+	python -m pytest --cov=src --cov-report term-missing $(TESTS)
 
 tox:
 	tox -v
-build:
-	python setup.py sdist bdist_wheel
 
-docs:
-	python setup.py build_sphinx
+build: src/*/*.py setup.py MANIFEST.in
+	python setup.py sdist bdist_wheel
 
 push:
 	git push -u origin master
 
-distclean:
+clean:
 	rm -r build dist 
 	rm src/getsnapshots.egg-info/SOURCES.txt
 	rm -r docs/build
+
+distclean:
+	rm -r build dist
+	rm -r src/*.egg-info
+	rm -r docs/build
+	rm -r .pytest_cache
+	rm -r tests/.pytest_cache
+	rm -r .tox
+	rm .coverage

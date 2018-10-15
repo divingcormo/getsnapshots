@@ -8,7 +8,7 @@ import os
 # All other data files are also in tests/ and subdirs -> cd tests
 # No matter where os.chdir() appears in the code, it is executed at module time,
 # i.e., before any test functions are called.
-if not os.getcwd().endswith('/tests'):
+if not os.getcwd().endswith('tests'):
     print("test module called from", os.getcwd(), "- changing to tests/")
     os.chdir('tests')
 

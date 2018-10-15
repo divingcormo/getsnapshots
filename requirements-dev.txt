@@ -8,3 +8,6 @@ pytest-cov==2.6.0
 # Code checkers
 flake8
 pylint
+
+# twine
+twine==1.11
