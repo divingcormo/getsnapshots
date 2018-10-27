@@ -3,7 +3,7 @@
 simulate=0   # don't write csv file
 
 # define variables
-variables='Min Cycle Frame Omega M66cAcB M66cBcG M66cGsD alpha alphap beta gamma phi tau E16cAcB E16rot E16orie L199rot K70cDcE K70cGcD K70cBcG I65cAcB I65rot Q109rot S111rot S62rot L119rot hbE16acy hbI65acy bE16oh I197rot Q213rot hbE215imi hbW239o64 hbW239o66 hbW239E16 hbE16W239 hbW240imi hbW240E215 hbK70E148 hbK70imi hbW304imi hbW239acy hbQ213acy hbK70W301 dW304Trp93 dW240Q42 M18cBcG M18cGsD hbW230Q109 dW301Q109 hbW304K70 o66orie bb66dihe hbW260phe hbS146phe hbR95imi hbW240n2 hbW230S111 hbW230o66 hbW230E16 hbW230o64 hbW230W239 hbW301W230 hbW301W304 hbW301S111 hbW301o66 hbW304E148 W301rmsd W304rmsd'
+variables='Min Cycle Frame Omega M66cAcB M66cBcG M66cGsD alpha alphap beta gamma phi tau E16cAcB E16rot E16orie L199rot K70cDcE K70cGcD K70cBcG I65cAcB I65rot Q109rot S111rot S62rot L119rot hbE16acy hbI65acy bE16oh I197rot Q213rot hbE215imi hbW239o64 hbW239o66 hbW239E16 hbE16W239 hbW240imi hbW240E215 hbK70E148 hbK70imi hbW304imi hbW239acy hbQ213acy hbK70W301 dW304Trp93 dW240Q42 M18cBcG M18cGsD hbW230Q109 dW301Q109 hbW304K70 o66orie bb66dihe hbW260phe hbS146phe hbR95imi hbW240n2 hbW230S111 hbW230o66 hbW230E16 hbW230o64 hbW230W239 hbW301W230 hbW301W304 hbW301S111 hbW301o66 hbW304E148 W301rmsd W304rmsd hbQ109o66'
 
 nvar=$(echo $variables | wc -w)
 declare -A var
@@ -174,7 +174,8 @@ d1=`getdistance_fast 3686 2229 $xyz` ; d2=`getdistance_fast 3687 2229 $xyz`
 var[hbW304E148]=`echo $d1 $d2 | awk '{if($1<$2) d=$1; else d=$2; printf("%.3f",d)}'` # SOLV 304 H1/H2  PROT 148 OE1
 var[W301rmsd]=`awk 'NR-2==3676{print sqrt(($2-x)^2+($3-y)^2+($4-z)^2)}' x=-4.203 y=5.095 z=-2.508 $xyz`
 var[W304rmsd]=`awk 'NR-2==3685{print sqrt(($2-x)^2+($3-y)^2+($4-z)^2)}' x=-4.539 y=3.184 z=-0.377 $xyz`
-
+d1=`getdistance_fast 1634 969 $xyz` ; d2=`getdistance_fast 1635 969 $xyz`
+var[hbQ109o66]=`echo $d1 $d2 | awk '{if($1<$2) d=$1; else d=$2; printf("%.3f",d)}'` # PROT 109 HE21/HE22  PROT 66 O
 
 # Write variables to csv.
 echo ${var[*]} | sed 's/  */,/g' >> $csv

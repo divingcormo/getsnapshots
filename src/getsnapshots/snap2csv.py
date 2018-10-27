@@ -54,7 +54,7 @@ VARIABLES = tuple(
     'dW301Q109 hbW304K70 o66orie bb66dihe hbW260phe hbS146phe hbR95imi '
     'hbW240n2 hbW230S111 hbW230o66 hbW230E16 hbW230o64 hbW230W239 '
     'hbW301W230 hbW301W304 hbW301S111 hbW301o66 hbW304E148 '
-    'W301rmsd W304rmsd'.split())    # ordered, immutable
+    'W301rmsd W304rmsd hbQ109o66'.split())    # ordered, immutable
 
 MIN_S1 = tuple(
     'v36b v36c v38a v38b v38c v38d v38f v38g v38h v39d '

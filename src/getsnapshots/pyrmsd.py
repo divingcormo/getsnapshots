@@ -12,7 +12,7 @@ list of lists:
 
 [[x, y, z, element, optional fields],...]
 
-The optional fields are (CHARMM nomenclature): segid, resname, resid.
+The optional fields are (CHARMM nomenclature): segid, resname, resid, weighting/b-factor.
 """
 #  This file is part of the getsnapshots package.
 #
@@ -226,18 +226,20 @@ def read_pdb(filename, chain="A", conformation="A", rm_link_atoms=False,
     # Assign variables by column ranges (consider only ATOM/HETATM lines).
     RECORD = slice(0, 6)        # REMARK, ATOM, HETATOM, etc.
     INDEX = slice(6, 11)        # Atom serial number (not used)
+                                # col 11 not used
     NAME = slice(12, 16)        # Atom name (type in charmm)
     ALTLOC = 16                 # Alternative location indicator
     RESNAME = slice(17, 21)     # Residue name (CHARMM uses the 4th letter)
     CHAINID = 21                # Chain identifier
     RESID = slice(22, 26)       # Residue sequence number
-    ICODE = 26                  # Code for insertion of residues (not used)
+    ICODE = slice(26,30)        # Code for insertion of residues (not used)
     CRD = slice(30, 54)         # Coordinates (use X, Y, Z slices instead)
     X = slice(30, 38)
     Y = slice(38, 46)
     Z = slice(46, 54)
     OCCUPANCY = slice(54, 60)   # Currently not checked
     BFACTOR = slice(60, 66)     # Temperature (beta) factor
+                                # slice(66, 72) not used
     SEGID = slice(72, 76)       # charmm segment ID (empty in databank files)
     ELEMENT = slice(76, 78)     # Element symbol
     CHARGE = slice(78, 80)      # Charge on the atom (currently ignored)
