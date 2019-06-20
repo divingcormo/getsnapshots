@@ -43,7 +43,7 @@ __version__ = '1.2'
 CONCUR_TASKS = 1
 
 VARIABLES = tuple(
-    'Min Cycle Frame Omega M66cAcB M66cBcG M66cGsD '
+    'Min Cycle Frame Omega f delta_mu M66cAcB M66cBcG M66cGsD '
     'alpha alphap beta gamma phi tau '
     'E16cAcB E16rot E16orie L199rot K70cDcE K70cGcD K70cBcG '
     'I65cAcB I65rot Q109rot S111rot S62rot L119rot '
@@ -118,7 +118,7 @@ def define_variables():
             line = line.replace('var[', '').replace(']=', ' ').replace('`', '')
             f = line.split()
             name = f[0]
-            if name in 'Min Cycle Frame Omega'.split():
+            if name in 'Min Cycle Frame Omega f delta_mu'.split():
                 continue
             dihe_shift, ref_coords = 0, [0, 0, 0]
             if var_type == 'hb':
@@ -168,7 +168,7 @@ def get_value(v, atoms):
         ref_coords: The reference point for calculating an RMSD.
 
     Returns:
-        float: The variable's value.
+        str: A formatted string with the variable's value.
     """
     if not isinstance(v, Variable):
         raise TypeError("{} is not an instance of Variable".format(v))
@@ -245,58 +245,83 @@ def converged(log):
         return 'Converged!' in fp.read()
 
 
+def parse_mndo(filename):
+    """Parses mndo output file for function get_omega()."""
+    DEBUG = False
+    try:
+        with open(filename, 'r') as fp:
+            lines = fp.read().splitlines()
+    except FileNotFoundError:
+        return 'NA', 'NA', 'NA'
+    n_match = 0; n_f = -1; n_mu0 = -1; n_mu1 = -1
+    for n, line in enumerate(lines):
+        if 'State  2' in line:
+            Omega = line.split()[5]
+            n_match += 1
+            if DEBUG:
+                print("excitation energy from", filename, ":", Omega)
+            Omega = float(Omega)
+        elif 'State dipole moments' in line:
+            n_mu0 = n + 3
+            n_mu1 = n + 4
+        elif 'Properties of transitions   1 ->' in line:
+            n_f = n + 3
+        elif n == n_mu0:
+            mu0 = [float(i) for i in line.split()[5:8]]
+        elif n == n_mu1:
+            mu1 = [float(i) for i in line.split()[5:8]]
+        elif n == n_f:
+            f = float(line.split()[8])
+    if n_match == 0:
+        return None, None, None
+    elif n_match > 1:
+        msg = "Warning: 'State  2' found several times in {}"
+        raise ValueError(msg.format(filename))
+    delta_mu = math.sqrt(sum((mu1[i] - mu0[i])**2 for i in range(3)))
+    return Omega, f, delta_mu
+
+
 def get_omega(mndo_out):
-    """Extracts S0->S1 excitation energy from mndo (gugaci) output file.
+    """Extracts S0->S1 excitation energy and properties from mndo output file.
 
     Args:
-        mndo_out: The Filename of an mndo output.
+        mndo_out: The Filename of an mndo (gugaci) output.
 
     Returns:
-        A float, if mndo_out is found, with the excitation energy in eV of the
-        lowest electronic transition of a GUGACI calculation.
+        If found in mndo_out:
+            Tuple of floats: (Omega, f, delta_mu)
+            Omega is the excitation energy in eV of the lowest electronic 
+            transition of a GUGACI calculation.
+            f and delta_mu are oscillator strength and difference dipole 
+            moment of the S0->S1 transition.
+        If mndo_out does not exist:
+            Tuple of str: ('NA', 'NA', 'NA')
         Otherwise, if the input file is found, and mndo_out matches "om2-opt"
-        or "cro-opt", tries to calculate it.
-        Makes a backup of the input file (if non-existent), modifies it by
-        adding GUGACI keywords for a single-point 2-root calculation.
-        'NA' if mndo_out does not exist or the excitation energy could not be
-        obtained.
+        or "cro-opt":
+            Makes a backup of the input file (if non-existent), modifies it by
+            adding GUGACI keywords for a single-point 2-root calculation.
+        Otherwise:
+            ('NA', 'NA', 'NA')
 
     Raises:
         ValueError: If "State  2" appears more than once.
         NotImplementedError: If the reason for the missing excitation energy
             could not be determined.
     """
-    DEBUG = False
-    try:
-        with open(mndo_out, 'r') as fp:
-            lines = fp.read().splitlines()
-    except FileNotFoundError:
-        return 'NA'
+    Omega, f, delta_mu = parse_mndo(mndo_out)
+    if Omega:
+        return Omega, f, delta_mu
 
-    n_match = 0
-    for line in lines:
-        if 'State  2' in line:
-            Omega = line.split()[5]
-            n_match += 1
-            if DEBUG:
-                print("excitation energy from", mndo_out, ":", Omega)
-            Omega = float(Omega)
-    if n_match == 1:
-        return Omega
-    if n_match > 1:
-        msg = "Warning: 'State  2' found several times in {}"
-        raise ValueError(msg.format(mndo_out))
-    assert n_match == 0
-    if 'om2-opt' not in mndo_out and 'cro-opt' not in mndo_out:
-        print("Warning: No excitation energy found in", mndo_out)
-        return 'NA'
-
+    # Handle the case: mndo.out exists but contains no exctitation spectrum.
     # In om2-opt-*-mndo.out and cro-opt-*-mndo.out the
     # S1 excitation energy may be missing in the following cases:
     # - in mode predict if snapshot is not part of cro-opt sample,
     #   then calculate it for abs if om2-opt.
     # - in mode predict if snapshot is part of cro-opt sample,
     #   then calculate it as well.
+    if 'om2-opt' not in mndo_out and 'cro-opt' not in mndo_out:
+        print("Warning: No excitation energy found in", mndo_out)
+        return 'NA', 'NA', 'NA'
     mndo_in = mndo_out.replace('mndo.out', 'mndo.in')
     assert mndo_in != mndo_out
     with open(mndo_in, 'r') as fp:
@@ -304,7 +329,7 @@ def get_omega(mndo_out):
     if 'iuvcd=2 ipop=2' in fstr:
         print("Warning: found iuvcd=2 and iroot=2 in", mndo_in,
               "but no excitation energy in", mndo_out)
-        return 'NA'
+        return 'NA', 'NA', 'NA'
     msg = "{} does not contain excited-state emission energy"\
         + " - trying to calculate it..."
     print(msg.format(mndo_out), end='')
@@ -335,21 +360,16 @@ def get_omega(mndo_out):
     assert CONCUR_TASKS == 1
     subprocess.call(mndo_call, shell=True)  # must block
     subprocess.call('rm fort.*', shell=True)
-    with open(mndo_out, 'r') as fp:
-        lines = fp.read().splitlines()
-    n_match = 0
-    for line in lines:
-        if 'State  2' in line:
-            Omega = line.split()[5]
-            n_match += 1
-            Omega = float(Omega)
-    if n_match != 1:
+
+    # Try again to retreive Omega etc.
+    Omega, f, delta_mu = parse_mndo(mndo_out)
+    if (not Omega) or (Omega == 'NA'):
         print(' FAILURE')
         shutil.copy2(mndo_in + '.bak', mndo_in)
-        return 'NA'
+        return 'NA', 'NA', 'NA'
         #exit()  # Or stop and investigate the problem?
     print(' SUCCESS')
-    return Omega
+    return Omega, f, delta_mu
 
 
 async def read_one(Min, Cycle, Frame, variables, mode, semaphore, verbose):
@@ -432,12 +452,12 @@ async def read_one(Min, Cycle, Frame, variables, mode, semaphore, verbose):
 
     if mode in ('model', 'predict'):
         async with semaphore:
-            Abs = await loop.run_in_executor(None, get_omega, abs_out)
+            Abs, _, _ = await loop.run_in_executor(None, get_omega, abs_out)
 
     async with semaphore:
         if DEBUG:
             print("   ", Min, Cycle, Frame, "get_omega...")
-        Omega = await loop.run_in_executor(None, get_omega, mndo_out)
+        Omega, f, delta_mu = await loop.run_in_executor(None, get_omega, mndo_out)
     if Omega == 'NA' and not mode == 'predict':
         msg = 'Could not get Omega for {} {}-{} (required in mode {}).'
         raise ValueError(msg.format(Min, Cycle, Frame, mode))
@@ -455,8 +475,12 @@ async def read_one(Min, Cycle, Frame, variables, mode, semaphore, verbose):
     snapshot['Frame'] = str(Frame)
     if Omega == 'NA':
         snapshot['Omega'] = 'NA'
+        snapshot['f'] = 'NA'
+        snapshot['delta_mu'] = 'NA'
     else:
         snapshot['Omega'] = "{:.4f}".format(Omega)
+        snapshot['f'] = "{:.3f}".format(f)
+        snapshot['delta_mu'] = "{:.3f}".format(delta_mu)
     if mode in ('model', 'predict'):
         if Abs == 'NA':
             msg = "Missing Abs in {} {}-{} (needed in mode {})."
@@ -469,7 +493,7 @@ async def read_one(Min, Cycle, Frame, variables, mode, semaphore, verbose):
         snapshot['State'] = State
 
     for var in VARIABLES:
-        if var in ('Min', 'Cycle', 'Frame', 'Omega', 'Abs', 'State'):
+        if var in ('Min', 'Cycle', 'Frame', 'Omega', 'f', 'delta_mu', 'Abs', 'State'):
             continue
         snapshot[var] = get_value(variables[var], atoms)
 
@@ -583,16 +607,21 @@ def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(
         description=(
-            'Produce "snapshots-a.csv"-like file.\n'
-            'snapshots-a.csv contains qm14-fix-v36/v38 S1 snapshots\n'
-            'snapshots-s0.csv contains qm12 and qm14-v38 S0 snapshots\n'
-            'snapshots-old.csv contains snapshots from older potentials'
-        )
+            'Write CSV file with snapshot structural data (om2-opt) and MNDO transition energies (om2-opt abs, cro-opt abs/em).'
+        ),
+        formatter_class=argparse.RawTextHelpFormatter
     )
     arg = parser.add_argument
     arg("--csv", "-c", default='a', help=(
-                        '[a|s0|old|predict|model] for '
-                        'S1/S0/pre-v36 snapshots or for prediction/modeling'))
+                        '[a|s0|old|model|predict|nn*] writes the csv file:\n'
+                        'a        snapshots-a.csv (S1 snapshots from v36, v38, v76)\n'
+                        's0       snapshots-s0.csv (S0 snapshots from qm12, v38s0, v76s0, and older trajectories)\n'
+                        'old      snapshots-old.csv (pre-v36 snapshots)\n'
+                        'model    snapshots-for-modeling.csv (from a-fix-...hb, v36, v38, v39)\n'
+                        'predict  snapshots-for-prediction.csv (plotting predicted spectra from v76 trajectories)\n'
+                        'nn0      snapshots-nn0.csv (xyz + internal coordinates of selected residues)\n'
+                        'nn1      snapshots-nn1.csv (data for neural nets, snapshots from both "model" and "predict")'
+                        ))
     arg("--simulate", "-s", action="store_true", help=(
                         "Dry run, don't write csv file."))
     arg("--verbose", "-v", action="store_true", help=(
@@ -616,6 +645,16 @@ def main():
         Mins = MIN_MODELING
         mode = 'model'
         VARIABLES += ('State', 'Abs')
+    elif args.csv == 'nn0':
+        csv = 'snapshots-nn0.csv'
+        Mins = MIN_MODELING + MIN_PREDICT
+        mode = 'nn0'
+        VARIABLES = ('E16orie', 'hbE16acy', 'E16-xyz', 'acy-xyz')
+    elif args.csv == 'nn1':
+        csv = 'snapshots-nn0.csv'
+        Mins = MIN_MODELING + MIN_PREDICT
+        mode = 'nn1'
+        VARIABLES = ('E16orie', 'hbE16acy', 'E16-xyz', 'acy-xyz')
     elif args.csv == 'predict':
         csv = 'snapshots-for-prediction.csv'
         Mins = MIN_PREDICT
